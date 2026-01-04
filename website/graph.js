@@ -17,15 +17,81 @@ function getIntensityLevel(minutes) {
     return 4;
 }
 
+// Global variable to store app stats
+let appStats = {};
+
 function processData(data) {
     const processed = {};
-    for (const [date, minutes] of Object.entries(data)) {
+    appStats = {}; // Reset
+
+    for (const [date, entry] of Object.entries(data)) {
+        // Handle both old (number) and new (object) data formats
+        let minutes = 0;
+        let dayApps = {};
+
+        if (typeof entry === 'number') {
+            minutes = entry;
+        } else {
+            minutes = entry.total || 0;
+            dayApps = entry.apps || {};
+        }
+
         processed[date] = {
             minutes: minutes,
             level: getIntensityLevel(minutes)
         };
+
+        // Aggregate app stats
+        for (const [appName, appMinutes] of Object.entries(dayApps)) {
+            if (!appStats[appName]) {
+                appStats[appName] = 0;
+            }
+            appStats[appName] += appMinutes;
+        }
     }
     return processed;
+}
+
+function renderPopularApps() {
+    const container = document.getElementById('app-cards');
+    container.innerHTML = '';
+
+    // Sort apps by total time desc
+    const sortedApps = Object.entries(appStats)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 6); // Top 6
+
+    const appColors = {
+        'TikTok': '#ff0050',
+        'Instagram': '#C13584',
+        'Twitter': '#1DA1F2',
+        'YouTube Shorts': '#FF0000',
+        'Facebook': '#1877F2',
+        'Reddit': '#FF4500'
+    };
+
+    sortedApps.forEach(([appName, minutes]) => {
+        const hours = (minutes / 60).toFixed(1);
+        const card = document.createElement('div');
+        card.className = 'app-card';
+
+        const color = appColors[appName] || '#8b949e';
+
+        card.innerHTML = `
+            <div class="app-header">
+                <span class="app-name">${appName}</span>
+                <span class="app-badge">Public</span>
+            </div>
+            <div class="app-description" style="font-size: 12px; color: #8b949e; margin-bottom: 16px;">
+                Doomscrolling platform
+            </div>
+            <div class="app-time">
+                <span class="language-dot" style="background-color: ${color}"></span>
+                ${hours} hours
+            </div>
+        `;
+        container.appendChild(card);
+    });
 }
 
 function renderGraph(data) {
@@ -40,14 +106,9 @@ function renderGraph(data) {
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - 364);
 
-    // Adjust to previous Sunday to ensure grid starts at top row
-    // Day of week: 0 (Sun) to 6 (Sat)
     const dayOfWeek = startDate.getDay();
     startDate.setDate(startDate.getDate() - dayOfWeek);
 
-    // Generate 365 days (52 weeks + 1 day to include end date effectively or just fill 52x7)
-    // Actually standard 7x52 is 364 days. Let's do 53 weeks to cover partials if needed, 
-    // or just strict 7x52 from the adjusted Sunday.
     const totalDays = 52 * 7;
 
     for (let i = 0; i < totalDays; i++) {
@@ -75,4 +136,5 @@ function renderGraph(data) {
 loadData().then(data => {
     console.log('Processed Data:', data);
     renderGraph(data);
+    renderPopularApps();
 });
