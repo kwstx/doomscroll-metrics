@@ -140,3 +140,16 @@ h3 {
 .level4 {
     background-color: #39d353;
 }
+
+/* About Summary */
+.about-summary {
+    margin-top: 24px;
+    border-top: 1px solid #30363d;
+    padding-top: 16px;
+}
+
+.about-summary p {
+    font-size: 16px;
+    color: #c9d1d9;
+    margin: 0;
+}
