@@ -1,4 +1,9 @@
 async function loadData() {
+    if (window.DOOMSCROLL_DATA) {
+        return processData(window.DOOMSCROLL_DATA);
+    }
+
+    // Fallback to fetch for server environments
     try {
         const response = await fetch('../data/doomscroll.json');
         const data = await response.json();
@@ -56,10 +61,12 @@ function renderPopularApps() {
     const container = document.getElementById('app-cards');
     container.innerHTML = '';
 
-    // Sort apps by total time desc
+    // Sort apps by total time desc, excluding Facebook and Reddit
+    const excludedApps = ['Facebook', 'Reddit'];
     const sortedApps = Object.entries(appStats)
+        .filter(([appName]) => !excludedApps.includes(appName))
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 6); // Top 6
+        .slice(0, 4); // Top 4
 
     const appColors = {
         'TikTok': '#ff0050',
